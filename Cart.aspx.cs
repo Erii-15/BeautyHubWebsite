@@ -44,9 +44,12 @@ namespace WebApplication1
                     break;
 
                 case "IncreaseQty":
-                    item.Quantity++;
-                    Session["Cart"] = cart;
-                    BindCart();
+                    if (item.Quantity < item.QuantityInStock)  // <-- prevents exceeding available stock
+                    {
+                        item.Quantity++;
+                        Session["Cart"] = cart;
+                        BindCart();
+                    }
                     break;
 
                 case "DecreaseQty":

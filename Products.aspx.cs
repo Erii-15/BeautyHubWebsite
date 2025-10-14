@@ -7,10 +7,8 @@ using System.Web.UI.WebControls;
 
 namespace WebApplication1
 {
-    // This page displays all available products and allows users to add them to the cart.
     public partial class Contact : Page
     {
-        // Inner class representing a Product object
         public class Product
         {
             public int ProductID { get; set; }
@@ -22,19 +20,17 @@ namespace WebApplication1
             public decimal PromotionPrice { get; set; }
             public int QuantityInStock { get; set; }
             public string ImageUrl { get; set; }
-            public int Quantity { get; set; } = 1; // default to 1 item when added to cart
+            public int Quantity { get; set; } = 1; // quantity user wants
         }
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // This runs only when the page is first loaded — not on every button click.
             if (!IsPostBack)
             {
                 BindProducts();
             }
         }
 
-        // Retrieves the product list from the database and binds it to the Repeater
         private void BindProducts()
         {
             rptProducts.DataSource = GetProducts();
@@ -42,32 +38,26 @@ namespace WebApplication1
             BindCategories();
         }
 
-        // Fetch all products from database
         private List<Product> GetProducts()
         {
             List<Product> products = new List<Product>();
-
-            // Your database connection string
             string connectionString = "Server=146.230.177.46;Database=WstGrp14;User ID=WstGrp14;Password=ajqbd;";
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                string query = "SELECT ProductID, ProductName, Description, Price, Category, Promotion, PromotionPrice, QuantityInStock, Image FROM ProductNEW";
-
+                string query = "SELECT ProductID, ProductName, Description, Price, Category, Promotion, PromotionPrice, QuantityInStock, Image FROM ProductNEW WHERE QuantityInStock>0";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     conn.Open();
                     SqlDataReader reader = cmd.ExecuteReader();
-
-                    // Loop through database rows and convert each into a Product object
                     while (reader.Read())
                     {
                         products.Add(new Product
                         {
-                            ProductID = reader["ProductID"] != DBNull.Value ? Convert.ToInt32(reader["ProductID"]) : 0,
+                            ProductID = Convert.ToInt32(reader["ProductID"]),
                             ProductName = reader["ProductName"]?.ToString() ?? "",
                             Description = reader["Description"]?.ToString() ?? "",
-                            Price = reader["Price"] != DBNull.Value ? Convert.ToDecimal(reader["Price"]) : 0m,
+                            Price = Convert.ToDecimal(reader["Price"]),
                             Category = reader["Category"]?.ToString() ?? "",
                             Promotion = reader["Promotion"] != DBNull.Value && Convert.ToBoolean(reader["Promotion"]),
                             PromotionPrice = reader["PromotionPrice"] != DBNull.Value ? Convert.ToDecimal(reader["PromotionPrice"]) : 0m,
@@ -80,6 +70,7 @@ namespace WebApplication1
 
             return products;
         }
+
         private void BindCategories()
         {
             string connectionString = "Server=146.230.177.46;Database=WstGrp14;User ID=WstGrp14;Password=ajqbd;";
@@ -93,45 +84,30 @@ namespace WebApplication1
                     conn.Open();
                     SqlDataReader reader = cmd.ExecuteReader();
                     while (reader.Read())
-                    {
                         categories.Add(reader["Category"].ToString());
-                    }
                 }
             }
 
-            // Bind to DropDown
             ddlProdCat.DataSource = categories;
             ddlProdCat.DataBind();
-
-            // Add "All" at the top
-            ddlProdCat.Items.Insert(0, new System.Web.UI.WebControls.ListItem("All", "all"));
+            ddlProdCat.Items.Insert(0, new ListItem("All", "all"));
         }
 
         protected void FilterProducts(object sender, EventArgs e)
         {
             var allProducts = GetProducts();
 
-            // ===== Category filter =====
+            // Category filter
             string selectedCategory = ddlProdCat.SelectedValue;
             if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "all")
-            {
-                allProducts = allProducts
-                    .Where(p => !string.IsNullOrEmpty(p.Category)
-                                && p.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+                allProducts = allProducts.Where(p => p.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            // ===== Search filter =====
+            // Search filter
             string searchText = txtProdSearch.Text?.Trim().ToLower();
             if (!string.IsNullOrEmpty(searchText))
-            {
-                allProducts = allProducts
-                    .Where(p => !string.IsNullOrEmpty(p.ProductName)
-                                && p.ProductName.ToLower().Contains(searchText))
-                    .ToList();
-            }
+                allProducts = allProducts.Where(p => p.ProductName.ToLower().Contains(searchText)).ToList();
 
-            // ===== Sort filter =====
+            // Sort filter
             switch (ddlSort.SelectedValue)
             {
                 case "price-asc":
@@ -147,43 +123,52 @@ namespace WebApplication1
                     allProducts = allProducts.OrderByDescending(p => p.ProductName).ToList();
                     break;
                 default:
-                    break; // "popular" - no sorting
+                    break; // popular
             }
 
-            // ===== Bind to repeater =====
             rptProducts.DataSource = allProducts;
             rptProducts.DataBind();
         }
 
-
-
-
-        // Event fired when an "Add to Cart" button is clicked inside the Repeater
         protected void rptProducts_ItemCommand(object source, RepeaterCommandEventArgs e)
         {
-            if (e.CommandName == "AddToCart")
+            if (e.CommandName != "AddToCart") return;
+
+            int productId = Convert.ToInt32(e.CommandArgument);
+            var selectedProduct = GetProducts().FirstOrDefault(p => p.ProductID == productId);
+            if (selectedProduct == null) return;
+
+            if (selectedProduct.QuantityInStock <= 0)
             {
-                int productId = Convert.ToInt32(e.CommandArgument);
+                ClientScript.RegisterStartupScript(this.GetType(), "alert", $"alert('{selectedProduct.ProductName} is out of stock!');", true);
+                return;
+            }
 
-                // Find the product that was clicked
-                var selectedProduct = GetProducts().Find(p => p.ProductID == productId);
+            // Retrieve cart from session
+            List<Product> cart = Session["Cart"] as List<Product> ?? new List<Product>();
 
-                if (selectedProduct != null)
+            // Check if product already in cart
+            var cartItem = cart.FirstOrDefault(p => p.ProductID == productId);
+            if (cartItem != null)
+            {
+                if (cartItem.Quantity < selectedProduct.QuantityInStock)
+                    cartItem.Quantity++;
+                else
                 {
-                    // Retrieve the user's cart from the Session, or create a new one
-                    List<Product> cart = Session["Cart"] as List<Product> ?? new List<Product>();
-
-                    // Add the product to the cart
-                    cart.Add(selectedProduct);
-
-                    // Save it back into Session
-                    Session["Cart"] = cart;
-
-                    // Trigger a nice popup (instead of an ugly alert)
-                    ScriptManager.RegisterStartupScript(this, GetType(), "showPopup",
-                        "showAddedPopup('" + selectedProduct.ProductName.Replace("'", "\\'") + "');", true);
+                    ClientScript.RegisterStartupScript(this.GetType(), "alert", $"alert('Cannot add more than available stock!');", true);
+                    return;
                 }
             }
+            else
+            {
+                cart.Add(selectedProduct);
+            }
+
+            Session["Cart"] = cart;
+
+            // Popup
+            ScriptManager.RegisterStartupScript(this, this.GetType(), "showPopup",
+                $"showAddedPopup('{selectedProduct.ProductName.Replace("'", "\\'")}');", true);
         }
     }
 }
