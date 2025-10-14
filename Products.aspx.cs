@@ -45,7 +45,7 @@ namespace WebApplication1
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                string query = "SELECT ProductID, ProductName, Description, Price, Category, Promotion, PromotionPrice, QuantityInStock, Image FROM ProductNEW WHERE QuantityInStock>0";
+                string query = "SELECT ProductID, ProductName, Description, Price, Category, Promotion, PromotionPrice, QuantityInStock, Image FROM ProductNEW WHERE QuantityInStock>0 and isActive=1";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     conn.Open();

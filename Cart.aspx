@@ -87,7 +87,8 @@
         <div class="text-end mt-3">
             <asp:Button ID="btnContinue" runat="server" Text="Continue Shopping" CssClass="btn-primary" 
                 OnClientClick="window.location='Products.aspx'; return false;" />
-            <asp:Button ID="btnCheckout" runat="server" Text="Checkout" CssClass="btn-primary" />
+            <asp:Button ID="btnCheckout" runat="server" Text="Checkout" CssClass="btn-primary"
+                OnClientClick="window.location='Payment.aspx'; return false;" />
         </div>
 
         <div id="cartPopup"></div>

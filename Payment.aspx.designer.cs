@@ -11,17 +11,26 @@ namespace WebApplication1
 {
 
 
-    public partial class Cart
+    public partial class Checkout
     {
 
         /// <summary>
-        /// CartGrid control.
+        /// pnlCartSummary control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.GridView CartGrid;
+        protected global::System.Web.UI.WebControls.Panel pnlCartSummary;
+
+        /// <summary>
+        /// rptCart control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptCart;
 
         /// <summary>
         /// lblTotal control.
@@ -33,21 +42,30 @@ namespace WebApplication1
         protected global::System.Web.UI.WebControls.Label lblTotal;
 
         /// <summary>
-        /// btnContinue control.
+        /// rblPaymentType control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnContinue;
+        protected global::System.Web.UI.WebControls.RadioButtonList rblPaymentType;
 
         /// <summary>
-        /// btnCheckout control.
+        /// btnPlaceOrder control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnCheckout;
+        protected global::System.Web.UI.WebControls.Button btnPlaceOrder;
+
+        /// <summary>
+        /// lblMessage control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblMessage;
     }
 }
