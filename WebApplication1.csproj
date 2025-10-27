@@ -162,6 +162,7 @@
     <Content Include="Account\TwoFactorAuthenticationSignIn.aspx" />
     <Content Include="Account\VerifyPhoneNumber.aspx" />
     <Content Include="BookAppointment.aspx" />
+    <Content Include="MyAppointments.aspx" />
     <Content Include="Payment.aspx" />
     <Content Include="Products.aspx" />
     <Content Include="Content\bootstrap-grid.css" />
@@ -371,6 +372,13 @@
     </Compile>
     <Compile Include="BookAppointment.aspx.designer.cs">
       <DependentUpon>BookAppointment.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="MyAppointments.aspx.cs">
+      <DependentUpon>MyAppointments.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="MyAppointments.aspx.designer.cs">
+      <DependentUpon>MyAppointments.aspx</DependentUpon>
     </Compile>
     <Compile Include="Payment.aspx.cs">
       <DependentUpon>Payment.aspx</DependentUpon>
