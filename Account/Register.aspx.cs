@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Web;
+using System.Configuration;
+using System.Data.SqlClient;
 using System.Web.UI;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using Owin;
-using WebApplication1.Models;
 
 namespace WebApplication1.Account
 {
@@ -13,23 +9,42 @@ namespace WebApplication1.Account
     {
         protected void CreateUser_Click(object sender, EventArgs e)
         {
-            var manager = Context.GetOwinContext().GetUserManager<ApplicationUserManager>();
-            var signInManager = Context.GetOwinContext().Get<ApplicationSignInManager>();
-            var user = new ApplicationUser() { UserName = Email.Text, Email = Email.Text };
-            IdentityResult result = manager.Create(user, Password.Text);
-            if (result.Succeeded)
-            {
-                // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
-                //string code = manager.GenerateEmailConfirmationToken(user.Id);
-                //string callbackUrl = IdentityHelper.GetUserConfirmationRedirectUrl(code, user.Id, Request);
-                //manager.SendEmail(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>.");
+            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
-                signInManager.SignIn( user, isPersistent: false, rememberBrowser: false);
-                IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
-            }
-            else 
+            string firstName = FirstName.Text.Trim();
+            string lastName = LastName.Text.Trim();
+            string phone = Phone.Text.Trim();
+            string email = Email.Text.Trim();
+            string notes = "website user";
+            string username = Username.Text.Trim();
+            string password = Password.Text.Trim(); // optional: hash if needed
+
+            using (SqlConnection con = new SqlConnection(connectionString))
             {
-                ErrorMessage.Text = result.Errors.FirstOrDefault();
+                string query = "INSERT INTO CustomerNEW (FirstName, LastName, Phone, Email,Notes, Username, Password, IsActive) " +
+                               "VALUES (@FirstName, @LastName, @Phone, @Email,@Notes, @Username, @Password, 1)";
+
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@FirstName", firstName);
+                cmd.Parameters.AddWithValue("@LastName", lastName);
+                cmd.Parameters.AddWithValue("@Phone", phone);
+                cmd.Parameters.AddWithValue("@Email", email);
+                cmd.Parameters.AddWithValue("@Notes", notes);
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Parameters.AddWithValue("@Password", password);
+
+                try
+                {
+                    con.Open();
+                    cmd.ExecuteNonQuery();
+
+                    // Redirect to login page after successful registration
+                    Response.Redirect("~/Account/Login.aspx");
+                }
+                catch (Exception ex)
+                {
+                    ErrorMessage.Text = "Error: " + ex.Message;
+                }
             }
         }
     }

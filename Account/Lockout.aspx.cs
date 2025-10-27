@@ -11,7 +11,12 @@ namespace WebApplication1.Account
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            // Clear all session variables
+            Session.Clear();
+            Session.Abandon();
 
+            // Redirect to the login page
+            Response.Redirect("~/Account/Login");
         }
     }
 }

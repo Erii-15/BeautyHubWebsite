@@ -26,14 +26,14 @@ namespace WebApplication1
         protected void Page_Load(object sender, EventArgs e)
         {
             // Require login
-            /*
+            
             if (!IsLoggedIn())
             {
                 string returnUrl = Server.UrlEncode(Request.RawUrl);
                 Response.Redirect($"~/Account/Login?returnUrl={returnUrl}", endResponse: true);
                 return;
             }
-            */
+            
             if (!IsPostBack)
             {
                 // serviceId via querystring
@@ -69,14 +69,14 @@ namespace WebApplication1
         protected void btnBook_Click(object sender, EventArgs e)
         {
 
-            /*
+            
             if (!IsLoggedIn())
             {
                 string returnUrl = Server.UrlEncode(Request.RawUrl);
                 Response.Redirect($"~/Account/Login?returnUrl={returnUrl}", endResponse: true);
                 return;
             }
-            */
+            
 
             // Validate form
             if (string.IsNullOrWhiteSpace(hfServiceID.Value) ||
@@ -141,14 +141,14 @@ namespace WebApplication1
                 {
                     try
                     {
-                        // Block if customer already has an unfinished appointment
-                        var pendingForCustomer = new List<(DateTime d, TimeSpan st, int dur)>();
+                        // Block if *this customer* already has an overlapping appointment at this time
+                        var custSlots = new List<(DateTime d, TimeSpan st, int dur)>();
                         using (var cmdCust = new SqlCommand(@"
-                            SELECT a.Date, a.Time, s.DurationMinutes
-                            FROM AppointmentNEW a
-                            JOIN ServiceNEW s ON s.ServiceID = a.ServiceID
-                            WHERE a.CustomerID = @cust
-                              AND a.Status IN ('Scheduled','Confirmed','InProgress');", conn, tx))
+    SELECT a.Date, a.Time, s.DurationMinutes
+    FROM AppointmentNEW a
+    JOIN ServiceNEW s ON s.ServiceID = a.ServiceID
+    WHERE a.CustomerID = @cust
+      AND a.Status IN ('Scheduled','Confirmed','InProgress');", conn, tx))
                         {
                             cmdCust.Parameters.AddWithValue("@cust", customerId);
                             using (var r = cmdCust.ExecuteReader())
@@ -158,23 +158,32 @@ namespace WebApplication1
                                     var d = Convert.ToDateTime(r["Date"]).Date;
                                     var st = (TimeSpan)r["Time"];
                                     var dur = Convert.ToInt32(r["DurationMinutes"]);
-                                    pendingForCustomer.Add((d, st, dur));
+                                    custSlots.Add((d, st, dur));
                                 }
                             }
                         }
 
-                        bool customerBlocked = pendingForCustomer.Any(x =>
+                        // Only care about appointments on the SAME DATE as the requested booking.
+                        // And only if they OVERLAP in time.
+                        bool customerConflict = custSlots.Any(x =>
                         {
-                            var xEnd = x.st.Add(TimeSpan.FromMinutes(x.dur));
-                            return x.d > serverToday || (x.d == serverToday && xEnd > serverTime);
+                            if (x.d != date) return false; // different day is fine
+
+                            var existStart = x.st;
+                            var existEnd = existStart.Add(TimeSpan.FromMinutes(x.dur));
+
+                            // does (existStart, existEnd) overlap (start, end)?
+                            return Overlaps(existStart, existEnd, start, end);
                         });
 
-                        if (customerBlocked)
+                        if (customerConflict)
                         {
-                            Notify("info", "Existing booking", "Please complete your current appointment first.");
+                            Notify("info", "Existing booking",
+                                "You already have an appointment that conflicts with this time.");
                             tx.Rollback();
                             return;
                         }
+
 
                         // Check staff overlap on that date
                         var staffSlots = new List<(TimeSpan st, int dur)>();

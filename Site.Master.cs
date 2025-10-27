@@ -69,7 +69,11 @@ namespace WebApplication1
 
         protected void Page_Load(object sender, EventArgs e)
         {
-
+            if (Session["Username"] != null)
+            {
+                //Come back to this
+                //lblUsername.Text = "Hello, " + Session["Username"].ToString();
+            }
         }
 
         protected void Unnamed_LoggingOut(object sender, LoginCancelEventArgs e)

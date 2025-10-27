@@ -1,61 +1,66 @@
 ﻿using System;
-using System.Web;
+using System.Configuration;
+using System.Data.SqlClient;
 using System.Web.UI;
-using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
-using Owin;
-using WebApplication1.Models;
 
 namespace WebApplication1.Account
 {
     public partial class Login : Page
     {
-        protected void Page_Load(object sender, EventArgs e)
-        {
-            RegisterHyperLink.NavigateUrl = "Register";
-            // Enable this once you have account confirmation enabled for password reset functionality
-            //ForgotPasswordHyperLink.NavigateUrl = "Forgot";
-            OpenAuthLogin.ReturnUrl = Request.QueryString["ReturnUrl"];
-            var returnUrl = HttpUtility.UrlEncode(Request.QueryString["ReturnUrl"]);
-            if (!String.IsNullOrEmpty(returnUrl))
-            {
-                RegisterHyperLink.NavigateUrl += "?ReturnUrl=" + returnUrl;
-            }
-        }
-
         protected void LogIn(object sender, EventArgs e)
         {
-            if (IsValid)
+            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+            string username = Username.Text.Trim();
+            string password = Password.Text.Trim();
+
+            using (SqlConnection con = new SqlConnection(connectionString))
             {
-                // Validate the user password
-                var manager = Context.GetOwinContext().GetUserManager<ApplicationUserManager>();
-                var signinManager = Context.GetOwinContext().GetUserManager<ApplicationSignInManager>();
+                string query = "SELECT CustomerID FROM CustomerNEW WHERE Username = @Username AND Password = @Password";
+                SqlCommand cmd = new SqlCommand(query, con);
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Parameters.AddWithValue("@Password", password);
 
-                // This doen't count login failures towards account lockout
-                // To enable password failures to trigger lockout, change to shouldLockout: true
-                var result = signinManager.PasswordSignIn(Email.Text, Password.Text, RememberMe.Checked, shouldLockout: false);
+                con.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
 
-                switch (result)
+                if (reader.HasRows)
                 {
-                    case SignInStatus.Success:
-                        IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
-                        break;
-                    case SignInStatus.LockedOut:
-                        Response.Redirect("/Account/Lockout");
-                        break;
-                    case SignInStatus.RequiresVerification:
-                        Response.Redirect(String.Format("/Account/TwoFactorAuthenticationSignIn?ReturnUrl={0}&RememberMe={1}", 
-                                                        Request.QueryString["ReturnUrl"],
-                                                        RememberMe.Checked),
-                                          true);
-                        break;
-                    case SignInStatus.Failure:
-                    default:
-                        FailureText.Text = "Invalid login attempt";
-                        ErrorMessage.Visible = true;
-                        break;
+                    reader.Read();
+                    int customerId = Convert.ToInt32(reader["CustomerID"]);
+
+                    // Store CustomerID in session
+                    Session["CustomerID"] = customerId;
+
+                    // Optionally, store other user details in session
+                    Session["Username"] = username;
+
+                    // Redirect to home page or dashboard
+                    Response.Redirect("~/Default.aspx");
+                }
+                else
+                {
+                    // Display error message
+                    FailureText.Text = "Invalid username or password.";
+                    ErrorMessage.Visible = true;
                 }
             }
         }
+
     }
+
+    // Optional: helper to hash password (if DB stores hashed passwords)
+    // private string ComputeSha256Hash(string rawData)
+    // {
+    //     using (var sha256 = System.Security.Cryptography.SHA256.Create())
+    //     {
+    //         byte[] bytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(rawData));
+    //         StringBuilder builder = new StringBuilder();
+    //         for (int i = 0; i < bytes.Length; i++)
+    //         {
+    //             builder.Append(bytes[i].ToString("x2"));
+    //         }
+    //         return builder.ToString();
+    //     }
+    // }
 }
+
