@@ -5,6 +5,15 @@
 
     <h1 class="text-center mb-4">Product Catalog</h1>
 
+  <asp:Panel ID="pnlLoginNotice" runat="server" Visible="false">
+    <div style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;
+                padding:8px;border-radius:6px;margin-bottom:12px;text-align:center;">
+        Please log in to shop our Products.
+        <a href="~/Account/Login" runat="server" style="font-weight:600; margin-left:6px;">Log in</a>
+    </div>
+</asp:Panel>
+
+
     <!-- ===== FILTER BAR ===== -->
     <div class="products-filter">
         <div class="filter-item">
@@ -51,12 +60,19 @@
                                 : $"R{Eval("Price", "{0:F2}")}" %>
                         </p>
 
-                        <%# Convert.ToInt32(Eval("QuantityInStock")) <= 5 ? "<p class='low-stock'>Low stock!</p>" : "" %>
+                       
 
                         <asp:Button ID="btnAddToCart" runat="server" Text="Add to Cart"
                             CommandName="AddToCart" CommandArgument='<%# Eval("ProductID") %>'
                             CssClass="btn-add"
                             Enabled='<%# Convert.ToInt32(Eval("QuantityInStock")) > 0 %>' />
+
+                        <div style="height:22px;">
+                            <%# Convert.ToInt32(Eval("QuantityInStock")) <= 5 
+                                ? $"<p class='low-stock'>Low stock! ({Eval("QuantityInStock")} left)</p>" 
+                                : "" %>
+                        </div>
+
                     </div>
                 </div>
             </ItemTemplate>

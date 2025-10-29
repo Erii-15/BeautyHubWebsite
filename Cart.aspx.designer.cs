@@ -15,6 +15,24 @@ namespace WebApplication1
     {
 
         /// <summary>
+        /// pnlLoginNotice control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlLoginNotice;
+
+        /// <summary>
+        /// lblEmpty control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Label lblEmpty;
+
+        /// <summary>
         /// CartGrid control.
         /// </summary>
         /// <remarks>

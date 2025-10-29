@@ -43,6 +43,22 @@
 
     <main>
         <h2>🛒 Your Shopping Cart</h2>
+       <!-- LOGIN NOTICE PANEL -->
+        <asp:Panel ID="pnlLoginNotice" runat="server" Visible="false">
+            <div style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;padding:8px;border-radius:6px;margin-bottom:12px; text-align:center;">
+                Please log in to view your cart.
+                <a href="~/Account/Login" runat="server" style="font-weight:600; margin-left:6px;">Log in</a>
+            </div>
+        </asp:Panel>
+
+
+        <asp:Label ID="lblEmpty" runat="server" 
+            Text="🛒 Oops! Your cart is looking a little empty. Let’s fix that!" 
+            ForeColor="#00a077" Font-Size="Large" 
+            Font-Bold="True" 
+            Style="display:block; text-align:center; margin:30px 0;" 
+            Visible="False" />
+
 
         <asp:GridView ID="CartGrid" runat="server" AutoGenerateColumns="False" CssClass="table"
             OnRowCommand="CartGrid_RowCommand">

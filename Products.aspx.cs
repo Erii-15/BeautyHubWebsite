@@ -23,12 +23,21 @@ namespace WebApplication1
             public int Quantity { get; set; } = 1; // quantity user wants
         }
 
+        private const string CONN = "Server=146.230.177.46;Database=WstGrp14;User ID=WstGrp14;Password=ajqbd;";
+
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
             {
                 BindProducts();
             }
+
+            pnlLoginNotice.Visible = !IsLoggedIn();
+        }
+
+        private bool IsLoggedIn()
+        {
+            return Session["CustomerID"] != null; // or use User.Identity.IsAuthenticated
         }
 
         private void BindProducts()
@@ -41,11 +50,12 @@ namespace WebApplication1
         private List<Product> GetProducts()
         {
             List<Product> products = new List<Product>();
-            string connectionString = "Server=146.230.177.46;Database=WstGrp14;User ID=WstGrp14;Password=ajqbd;";
-
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(CONN))
             {
-                string query = "SELECT ProductID, ProductName, Description, Price, Category, Promotion, PromotionPrice, QuantityInStock, Image FROM ProductNEW WHERE QuantityInStock>0 and isActive=1";
+                string query = @"SELECT ProductID, ProductName, Description, Price, Category, Promotion, 
+                                 PromotionPrice, QuantityInStock, Image 
+                                 FROM ProductNEW 
+                                 WHERE QuantityInStock>0 and isActive=1";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     conn.Open();
@@ -67,16 +77,13 @@ namespace WebApplication1
                     }
                 }
             }
-
             return products;
         }
 
         private void BindCategories()
         {
-            string connectionString = "Server=146.230.177.46;Database=WstGrp14;User ID=WstGrp14;Password=ajqbd;";
             List<string> categories = new List<string>();
-
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection conn = new SqlConnection(CONN))
             {
                 string query = "SELECT DISTINCT Category FROM ProductNEW WHERE Category IS NOT NULL";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -97,17 +104,14 @@ namespace WebApplication1
         {
             var allProducts = GetProducts();
 
-            // Category filter
             string selectedCategory = ddlProdCat.SelectedValue;
             if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "all")
                 allProducts = allProducts.Where(p => p.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            // Search filter
             string searchText = txtProdSearch.Text?.Trim().ToLower();
             if (!string.IsNullOrEmpty(searchText))
                 allProducts = allProducts.Where(p => p.ProductName.ToLower().Contains(searchText)).ToList();
 
-            // Sort filter
             switch (ddlSort.SelectedValue)
             {
                 case "price-asc":
@@ -122,8 +126,6 @@ namespace WebApplication1
                 case "name-desc":
                     allProducts = allProducts.OrderByDescending(p => p.ProductName).ToList();
                     break;
-                default:
-                    break; // popular
             }
 
             rptProducts.DataSource = allProducts;
@@ -133,6 +135,12 @@ namespace WebApplication1
         protected void rptProducts_ItemCommand(object source, RepeaterCommandEventArgs e)
         {
             if (e.CommandName != "AddToCart") return;
+
+            if (!IsLoggedIn())
+            {
+                Response.Redirect("~/Account/Login");
+                return;
+            }
 
             int productId = Convert.ToInt32(e.CommandArgument);
             var selectedProduct = GetProducts().FirstOrDefault(p => p.ProductID == productId);
@@ -144,10 +152,7 @@ namespace WebApplication1
                 return;
             }
 
-            // Retrieve cart from session
             List<Product> cart = Session["Cart"] as List<Product> ?? new List<Product>();
-
-            // Check if product already in cart
             var cartItem = cart.FirstOrDefault(p => p.ProductID == productId);
             if (cartItem != null)
             {
@@ -166,7 +171,6 @@ namespace WebApplication1
 
             Session["Cart"] = cart;
 
-            // Popup
             ScriptManager.RegisterStartupScript(this, this.GetType(), "showPopup",
                 $"showAddedPopup('{selectedProduct.ProductName.Replace("'", "\\'")}');", true);
         }

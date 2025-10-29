@@ -11,13 +11,26 @@ namespace WebApplication1
         {
             if (!IsPostBack)
             {
+                pnlLoginNotice.Visible = !IsLoggedIn(); // show login notice if not logged in
                 BindCart();
             }
+        }
+
+        private bool IsLoggedIn()
+        {
+            return Session["CustomerID"] != null; // same login check as Products
         }
 
         private void BindCart()
         {
             List<Contact.Product> cart = Session["Cart"] as List<Contact.Product> ?? new List<Contact.Product>();
+
+            // Hide cart grid and checkout if not logged in
+            CartGrid.Visible = btnCheckout.Visible = IsLoggedIn() && cart.Any();
+            lblEmpty.Visible = !IsLoggedIn() || !cart.Any(); // show empty / login notice
+
+            if (!cart.Any() || !IsLoggedIn()) return;
+
             CartGrid.DataSource = cart;
             CartGrid.DataBind();
 
@@ -27,9 +40,14 @@ namespace WebApplication1
 
         protected void CartGrid_RowCommand(object sender, GridViewCommandEventArgs e)
         {
+            if (!IsLoggedIn())
+            {
+                Response.Redirect("~/Account/Login");
+                return;
+            }
+
             int productId = Convert.ToInt32(e.CommandArgument);
             List<Contact.Product> cart = Session["Cart"] as List<Contact.Product>;
-
             if (cart == null) return;
 
             var item = cart.FirstOrDefault(p => p.ProductID == productId);
@@ -39,28 +57,19 @@ namespace WebApplication1
             {
                 case "RemoveItem":
                     cart.Remove(item);
-                    Session["Cart"] = cart;
-                    BindCart();
                     break;
-
                 case "IncreaseQty":
-                    if (item.Quantity < item.QuantityInStock)  // <-- prevents exceeding available stock
-                    {
+                    if (item.Quantity < item.QuantityInStock)
                         item.Quantity++;
-                        Session["Cart"] = cart;
-                        BindCart();
-                    }
                     break;
-
                 case "DecreaseQty":
                     if (item.Quantity > 1)
-                    {
                         item.Quantity--;
-                        Session["Cart"] = cart;
-                        BindCart();
-                    }
                     break;
             }
+
+            Session["Cart"] = cart;
+            BindCart();
         }
     }
 }
